@@ -1,20 +1,22 @@
 package edu.inforscience.algorithm;
 
-public class Node {
-  private int row, col, cost;
+public class Node implements Comparable<Node> {
+  private int row, col, cost, bombs;
 
   public Node()
   {
     setRow(0);
     setCol(0);
     setCost(0);
+    setBombs(0);
   }
 
-  public Node(int row, int col, int cost)
+  public Node(int row, int col, int cost, int bombs)
   {
     setRow(row);
     setCol(col);
     setCost(cost);
+    setBombs(bombs);
   }
 
   public int getCol()
@@ -46,5 +48,22 @@ public class Node {
   {
     this.row = row;
   }
+
+  public int getBombs()
+  {
+    return bombs;
+  }
+
+  public void setBombs(int bombs)
+  {
+    this.bombs = bombs;
+  }
+
+  @Override
+  public int compareTo(Node other)
+  {
+    return getCost() - other.getCost();
+  }
+
 }
 

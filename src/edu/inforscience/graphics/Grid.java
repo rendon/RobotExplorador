@@ -5,11 +5,13 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
 import edu.inforscience.algorithm.*;
+import java.io.PrintStream;
 
 public class Grid extends JPanel {
 
-  public final int MIN_DIMENSION = 10;
-  public final int MAX_DIMENSION = 50;
+  public static final int MIN_DIMENSION = 10;
+  public static final int MAX_DIMENSION = 50;
+  public static final int SLEEP_INTERVAL = 300;
   private Cell grid[][];
   private int rows, cols;
   private double width, height;
@@ -23,6 +25,10 @@ public class Grid extends JPanel {
   private Thread playerThread;
 
   private Cell player;
+  private int playerBombs;
+  ArrayList<Cell> bombList;
+
+  private PrintStream log;
 
   public Grid()
   {
@@ -55,8 +61,19 @@ public class Grid extends JPanel {
               (y >= grid[i][j].getRow() && y < grid[i][j].getRow() + height)) {
               if (isActiveEraser()) {
                 grid[i][j].setContent(Cell.EMPTY);
+
+                //Cell bomb = new Cell(i, j);
+                //if (bombList.contains(bomb))
+                //  bombList.remove(bomb);
+
               } else if (isActiveBomber()) {
                 grid[i][j].setContent(Cell.BOMB);
+
+                //Cell bomb = new Cell(i, j);
+                //if (!bombList.contains(bomb)) {
+                //  bombList.add(bomb);
+                //}
+
               } else {
                 grid[i][j].setContent(Cell.WALL);
               }
@@ -93,6 +110,7 @@ public class Grid extends JPanel {
                 grid[i][j].setContent(Cell.EMPTY);
               } else if (isActiveBomber()) {
                 grid[i][j].setContent(Cell.BOMB);
+
               } else {
                 grid[i][j].setContent(Cell.WALL);
               }
@@ -111,6 +129,11 @@ public class Grid extends JPanel {
 
     player = new Cell(0, 0);
     playerThread = new Thread(new PlayerThread());
+    playerBombs = 0;
+
+    bombList = new ArrayList<Cell>();
+
+    log = new PrintStream(System.out);
   }
 
   public void paintComponent(Graphics g)
@@ -171,6 +194,7 @@ public class Grid extends JPanel {
     rows = value;
     repaint();
   }
+
   public void setCols(int value)
   {
     cols = value;
@@ -208,7 +232,6 @@ public class Grid extends JPanel {
     this.activeBomber = activeBomber;
   }
 
-
   // Util
   private ImageIcon loadPicture(String pictureName)
   {
@@ -227,10 +250,11 @@ public class Grid extends JPanel {
       int r = player.getRow();
       int c = player.getCol();
       boolean restart;
+      ArrayList<Cell> path = new ArrayList<Cell>();
       PathFinder pathFinder = new PathFinder();
+
       while ((r + 1 != rows) || (c + 1 != cols)) {
-        System.out.println("new start: " + r + ", " + c);
-        ArrayList<Cell> path = pathFinder.getShortestPath(r, c, grid, rows);
+        path = pathFinder.getShortestPath(r, c, grid, rows, rows - 1, rows - 1);
         if (path != null) {
           restart = false;
           for (int i = 0; i < path.size() && !restart; i++) {
@@ -239,37 +263,82 @@ public class Grid extends JPanel {
             int cc = cell.getCol();
             int content = grid[cr][cc].getContent();
 
-            System.out.println("(" + cr + ", " + cc + ")");
-
-            if (content != Cell.EMPTY) {
-              restart = true;
-              System.out.println("RESTART!");
+            if (content == Cell.WALL) {
               break;
             }
 
             r = cr;
             c = cc;
-
             player.setRow(cr);
             player.setCol(cc);
             repaint();
-            try {
-              Thread.sleep(100);
-            } catch (InterruptedException e) {
-              System.out.println(e.toString());
-            }
+            sleep(SLEEP_INTERVAL);
           }
         } else {
-          System.out.println("No path!");
-        }
+          int i, j, nr, nc;
+          path = new ArrayList<Cell>();
+          int neededBombs = pathFinder.minCrossPath(r, c, grid, rows, rows - 1, rows - 1, path);
+          pathFinder.collectBombs(r, c, grid, rows, bombList);
+          playerBombs = bombList.size();
 
-        try {
-          Thread.sleep(500);
-        } catch (InterruptedException e) {
+          if (playerBombs >= neededBombs) {
+            for (i = 0; i < bombList.size(); i++) {
+              nr = bombList.get(i).getRow();
+              nc = bombList.get(i).getCol();
+
+              path = pathFinder.getShortestPath(r, c, grid, rows, nr, nc);
+
+              for (j = 0; j < path.size(); j++) {
+                nr = path.get(j).getRow();
+                nc = path.get(j).getCol();
+                player.setRow(nr);
+                player.setCol(nc);
+                if (grid[nr][nc].getContent() == Cell.BOMB)
+                  grid[nr][nc].setContent(Cell.EMPTY);
+                repaint();
+                sleep(SLEEP_INTERVAL);
+                r = nr;
+                c = nc;
+              }
+            }
+
+            path = new ArrayList<Cell>();
+            pathFinder.minCrossPath(r, c, grid, rows, rows - 1, rows - 1, path);
+            for (j = 0; j < path.size(); j++) {
+              nr = path.get(j).getRow();
+              nc = path.get(j).getCol();
+              if (grid[nr][nc].getContent() == Cell.WALL) {
+                if (playerBombs > 0) {
+                  grid[nr][nc].setContent(Cell.EMPTY);
+                  playerBombs--;
+                } else {
+                  break;
+                }
+              }
+
+              player.setRow(nr);
+              player.setCol(nc);
+              repaint();
+              sleep(SLEEP_INTERVAL);
+              r = nr;
+              c = nc;
+            }
+
+          }
         }
+        sleep(SLEEP_INTERVAL);
       }
+    }
 
+
+    private void sleep(int seconds)
+    {
+      try {
+        Thread.sleep(seconds);
+      } catch (InterruptedException e) {
+      }
     }
   }
+
 }
 

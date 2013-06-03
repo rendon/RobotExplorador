@@ -68,7 +68,9 @@ public class Main extends JFrame {
     pencilButton = new JButton("Pared", pencilIcon);
     drawBombButton = new JButton("Bomba", bombIcon);
     playButton = new JButton("Iniciar", playIcon);
-    dimessionSpinner = new JSpinner(new SpinnerNumberModel(10, 5, 50, 1));
+    dimessionSpinner = new JSpinner(
+        new SpinnerNumberModel(10, Grid.MIN_DIMENSION, Grid.MAX_DIMENSION, 1)
+    );
 
     dimessionSpinner.setValue(10);
 
