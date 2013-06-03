@@ -22,6 +22,7 @@ public class Grid extends JPanel {
   private ImageIcon bombIcon;
   private ImageIcon playerIcon;
   private ImageIcon wallIcon;
+  private ImageIcon finishIcon;
   private Thread playerThread;
 
   private Cell player;
@@ -62,17 +63,9 @@ public class Grid extends JPanel {
               if (isActiveEraser()) {
                 grid[i][j].setContent(Cell.EMPTY);
 
-                //Cell bomb = new Cell(i, j);
-                //if (bombList.contains(bomb))
-                //  bombList.remove(bomb);
-
               } else if (isActiveBomber()) {
-                grid[i][j].setContent(Cell.BOMB);
-
-                //Cell bomb = new Cell(i, j);
-                //if (!bombList.contains(bomb)) {
-                //  bombList.add(bomb);
-                //}
+                if (grid[i][j].getContent() != Cell.WALL)
+                  grid[i][j].setContent(Cell.BOMB);
 
               } else {
                 grid[i][j].setContent(Cell.WALL);
@@ -109,7 +102,8 @@ public class Grid extends JPanel {
               if (isActiveEraser()) {
                 grid[i][j].setContent(Cell.EMPTY);
               } else if (isActiveBomber()) {
-                grid[i][j].setContent(Cell.BOMB);
+                if (grid[i][j].getContent() != Cell.WALL)
+                  grid[i][j].setContent(Cell.BOMB);
 
               } else {
                 grid[i][j].setContent(Cell.WALL);
@@ -126,6 +120,7 @@ public class Grid extends JPanel {
     bombIcon = loadPicture("bomb.png");
     playerIcon = loadPicture("robot.png");
     wallIcon = loadPicture("wall.png");
+    finishIcon = loadPicture("finish_flag.png");
 
     player = new Cell(0, 0);
     playerThread = new Thread(new PlayerThread());
@@ -140,6 +135,7 @@ public class Grid extends JPanel {
   {
     super.paintComponent(g);
 
+    g.drawString("Bombas: " + playerBombs, (int)((rows - 2) * width) + 10, 10);
     width  = getWidth()  / (double)cols;
     height = getHeight() / (double)rows;
     for (int i = 0; i < rows; i++) {
@@ -170,7 +166,11 @@ public class Grid extends JPanel {
         int r = grid[i][j].getRow();
         int c = grid[i][j].getCol();
 
-        if (player.getRow() == i && player.getCol() == j) {
+        if (i + 1 == rows && j + 1 == cols) {
+          g.drawImage(finishIcon.getImage(), c, r, w, h, null);
+          if (player.getRow() == i && player.getCol() == j)
+            g.drawImage(playerIcon.getImage(), c, r, w, h, null);
+        } else if (player.getRow() == i && player.getCol() == j) {
           g.drawImage(playerIcon.getImage(), c, r, w, h, null);
         } if (content == Cell.WALL) {
           g.drawImage(wallIcon.getImage(), c, r, w, h, null);
@@ -250,7 +250,7 @@ public class Grid extends JPanel {
       int r = player.getRow();
       int c = player.getCol();
       boolean restart;
-      ArrayList<Cell> path = new ArrayList<Cell>();
+      ArrayList<Cell> path;
       PathFinder pathFinder = new PathFinder();
 
       while ((r + 1 != rows) || (c + 1 != cols)) {
@@ -265,6 +265,9 @@ public class Grid extends JPanel {
 
             if (content == Cell.WALL) {
               break;
+            } else if (content == Cell.BOMB) {
+              playerBombs++;
+              grid[cr][cc].setContent(Cell.EMPTY);
             }
 
             r = cr;
@@ -278,10 +281,10 @@ public class Grid extends JPanel {
           int i, j, nr, nc;
           path = new ArrayList<Cell>();
           int neededBombs = pathFinder.minCrossPath(r, c, grid, rows, rows - 1, rows - 1, path);
-          pathFinder.collectBombs(r, c, grid, rows, bombList);
-          playerBombs = bombList.size();
+          if (playerBombs < neededBombs)
+            pathFinder.collectBombs(r, c, grid, rows, bombList);
 
-          if (playerBombs >= neededBombs) {
+          if (playerBombs + bombList.size() >= neededBombs) {
             for (i = 0; i < bombList.size(); i++) {
               nr = bombList.get(i).getRow();
               nc = bombList.get(i).getCol();
@@ -300,6 +303,11 @@ public class Grid extends JPanel {
                 r = nr;
                 c = nc;
               }
+
+              playerBombs++;
+
+              if (playerBombs >= neededBombs)
+                break;
             }
 
             path = new ArrayList<Cell>();
@@ -314,6 +322,9 @@ public class Grid extends JPanel {
                 } else {
                   break;
                 }
+              } else if (grid[nr][nc].getContent() == Cell.BOMB) {
+                playerBombs++;
+                grid[nr][nc].setContent(Cell.EMPTY);
               }
 
               player.setRow(nr);

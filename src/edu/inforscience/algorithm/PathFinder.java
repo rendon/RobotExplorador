@@ -150,7 +150,10 @@ public class PathFinder {
             found = true;
             break;
           }
-          Q.add(new Node(nr, nc, newCost, 0));
+
+          Node next = new Node(nr, nc, newCost, 0);
+          next.setLength(front.getLength() + 1);
+          Q.add(next);
         }
       }
     }
@@ -168,6 +171,7 @@ public class PathFinder {
     r = endRow;
     c = endCol;
 
+    L.clear();
     while (true) {
       L.add(new Cell(r, c));
       if (r == row && c == col)

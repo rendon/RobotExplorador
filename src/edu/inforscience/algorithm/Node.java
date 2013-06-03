@@ -2,6 +2,9 @@ package edu.inforscience.algorithm;
 
 public class Node implements Comparable<Node> {
   private int row, col, cost, bombs;
+  /* Auxiliary member: if two nones has the same
+    cost choose the one whose length is less. */
+  private int length;
 
   public Node()
   {
@@ -9,6 +12,7 @@ public class Node implements Comparable<Node> {
     setCol(0);
     setCost(0);
     setBombs(0);
+    setLength(0);
   }
 
   public Node(int row, int col, int cost, int bombs)
@@ -17,6 +21,7 @@ public class Node implements Comparable<Node> {
     setCol(col);
     setCost(cost);
     setBombs(bombs);
+    setLength(0);
   }
 
   public int getCol()
@@ -59,10 +64,21 @@ public class Node implements Comparable<Node> {
     this.bombs = bombs;
   }
 
+  public int getLength() {
+    return length;
+  }
+
+  public void setLength(int length) {
+    this.length = length;
+  }
+
   @Override
   public int compareTo(Node other)
   {
-    return getCost() - other.getCost();
+    if (getCost() != other.getCost())
+      return getCost() - other.getCost();
+
+    return getLength() - other.getLength();
   }
 
 }

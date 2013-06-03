@@ -14,14 +14,14 @@ public class Main extends JFrame {
   private JButton drawBombButton, quitButton, eraserButton, pencilButton;
   private JButton playButton;
   private JSpinner dimessionSpinner;
-  private ImageIcon bombIcon, pencilIcon, eraserIcon, playIcon;
+  private ImageIcon bombIcon, pencilIcon, eraserIcon, playIcon, finishIcon;
   private Grid grid;
 
   public Main()
   {
     super("Juego_IA");
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setSize(900, 980);
+    setSize(600, 680);
     setResizable(false);
 
     initializeComponents();
